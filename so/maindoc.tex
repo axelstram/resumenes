@@ -1,0 +1,89 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[paper=a4paper, hmargin=1.5cm, bottom=1.5cm, top=3.5cm]{geometry}
+\usepackage[latin1]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{caratula}
+\usepackage{verbatim}
+\usepackage{xspace}
+\usepackage{xargs}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{ifthen}
+\usepackage[spanish,noline,longend]{algorithm2e}
+\usepackage{listings}
+\usepackage{braket}
+%\usepackage{aed2-tad,aed2-symb,aed2-itef}
+
+\lstset{language=C++, tabsize=4, breaklines=true, breakatwhitespace=true, numbers=left, numbersep=10pt}
+
+
+
+
+\pagestyle{fancy}
+\thispagestyle{fancy}
+\addtolength{\headheight}{1pt}
+\cfoot{\thepage /\pageref{LastPage}}
+\renewcommand{\footrulewidth}{0.4pt}
+
+
+\begin{document}
+
+
+\begin{center}
+\begin{Large}
+\textbf{Resumen Organizaci\'on del Computador II}
+\end{Large}
+\end{center}
+\begin{center}
+Axel Straminsky
+\end{center}
+
+
+\begin{center}
+Diciembre 2014
+\end{center}
+
+\vspace*{11\baselineskip}
+
+
+\begin{center}
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[width=8cm]{./logo_uba}
+\end{center}
+\end{figure}
+\end{center}
+
+
+\begin{center}
+\begin{figure}[htb]
+\begin{center}
+\includegraphics[width=8cm]{./logo_dc}
+\end{center}
+\end{figure}
+\end{center}
+
+
+
+\vspace*{8\baselineskip}
+
+
+Aclaraci\'on: Este apunte es un resumen que use para preparar el final de Orga 2. El apunte no est\'a completo, es decir, no abarca el total
+de la materia, ni necesariamente est\'a del todo correcto.
+
+\newpage
+
+\tableofcontents
+
+\newpage
+\input{resumen.tex}
+
+\newpage
+\input{bibliografia.tex}
+\end{document}
