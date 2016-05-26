@@ -1,89 +1,122 @@
-\documentclass[a4paper,10pt]{article}
-\usepackage[paper=a4paper, hmargin=1.5cm, bottom=1.5cm, top=3.5cm]{geometry}
-\usepackage[latin1]{inputenc}
-\usepackage[T1]{fontenc}
+\documentclass[a4paper]{article}
 \usepackage[spanish]{babel}
-\usepackage{amssymb}
-\usepackage{amsmath}
-\usepackage{mathtools}
-\usepackage{fancyhdr}
-\usepackage{lastpage}
-\usepackage{caratula}
-\usepackage{verbatim}
-\usepackage{xspace}
-\usepackage{xargs}
-\usepackage{float}
+\usepackage[utf8]{inputenc}
 \usepackage{graphicx}
-\usepackage{ifthen}
-\usepackage[spanish,noline,longend]{algorithm2e}
+\usepackage{enumerate}
 \usepackage{listings}
-\usepackage{braket}
-%\usepackage{aed2-tad,aed2-symb,aed2-itef}
+\usepackage{color}
+\usepackage{indentfirst}
+\usepackage{fancyhdr}
+\usepackage{latexsym}
+\usepackage{subfigure}
+\usepackage{caption}
+\usepackage{mwe}
+\usepackage[colorlinks=true, linkcolor=black]{hyperref}
+%\usepackage{makeidx}
+%\usepackage{float}
+\usepackage{wrapfig}
+\usepackage{calc}
+\usepackage{amsmath, amsthm, amssymb}
+\usepackage{amsfonts}
+%\lstset{language=C}
+\definecolor{gray}{gray}{0.5}
+\definecolor{light-gray}{gray}{0.95}
+\definecolor{orange}{rgb}{1,0.5,0}
 
-\lstset{language=C++, tabsize=4, breaklines=true, breakatwhitespace=true, numbers=left, numbersep=10pt}
+\input{page.layout}
+% \setcounter{secnumdepth}{2}
+\usepackage{underscore}
+\usepackage{caratula}
+\usepackage{url}
+\usepackage{float}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
 
 
 
 
-\pagestyle{fancy}
-\thispagestyle{fancy}
-\addtolength{\headheight}{1pt}
-\cfoot{\thepage /\pageref{LastPage}}
-\renewcommand{\footrulewidth}{0.4pt}
+
+\newcommand{\cod}[1]{{\tt #1}}
+\newcommand{\negro}[1]{{\bf #1}}
+\newcommand{\ital}[1]{{\em #1}}
+\newcommand{\may}[1]{{\sc #1}}
+\newcommand{\tab}{\hspace*{2em}}
+
+%agrego para obtener nueracion por letras, despues verifico si funca
+\renewcommand{\labelenumi}{[\alph{enumi}]}
+\renewcommand{\labelenumii}{[\roman{enumii}]}
+
+\hypersetup{
+ pdfstartview= {FitH \hypercalcbp{\paperheight-\topmargin-1in-\headheight}},
+ pdfauthor={Grupo},
+ pdfsubject={Dise\~{n}o}
+}
+
+\lstdefinestyle{customc}{
+  backgroundcolor=\color{light-gray},
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  numbers=left,
+  xleftmargin=\parindent,
+  language=C,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\bfseries\color{blue},
+  commentstyle=\itshape\color{gray},
+  identifierstyle=\color{black},
+  stringstyle=\color{orange},
+}
+
+\lstdefinestyle{customasm}{
+  backgroundcolor=\color{light-gray},
+  belowcaptionskip=1\baselineskip,
+  numbers=left,
+  xleftmargin=\parindent,
+  language=[x86masm]Assembler,
+  keywordstyle=\bfseries\color{blue},
+  basicstyle=\footnotesize\ttfamily,
+  commentstyle=\itshape\color{gray},
+}
+
+\lstset{escapechar=@}
 
 
 \begin{document}
 
+\thispagestyle{empty}
+\materia{Axel Straminsky}
+\submateria{Diciembre 2015}
+\titulo{Resumen Sistemas Operativos}
 
-\begin{center}
-\begin{Large}
-\textbf{Resumen Organizaci\'on del Computador II}
-\end{Large}
-\end{center}
-\begin{center}
-Axel Straminsky
-\end{center}
-
-
-\begin{center}
-Diciembre 2014
-\end{center}
-
-\vspace*{11\baselineskip}
-
-
-\begin{center}
-\begin{figure}[htb]
-\begin{center}
-\includegraphics[width=8cm]{./logo_uba}
-\end{center}
-\end{figure}
-\end{center}
-
-
-\begin{center}
-\begin{figure}[htb]
-\begin{center}
-\includegraphics[width=8cm]{./logo_dc}
-\end{center}
-\end{figure}
-\end{center}
-
-
-
-\vspace*{8\baselineskip}
-
-
-Aclaraci\'on: Este apunte es un resumen que use para preparar el final de Orga 2. El apunte no est\'a completo, es decir, no abarca el total
-de la materia, ni necesariamente est\'a del todo correcto.
-
+\makeatletter
+\maketitle
 \newpage
 
+\thispagestyle{empty}
+\vfill
+
+\thispagestyle{empty}
+\vspace{3cm}
 \tableofcontents
-
 \newpage
+
+\newenvironment{myindentpar}[1]
+{\begin{list}{1}
+         {\setlength{\leftmargin}{#1}}
+         \item[]
+}
+{\end{list} }
+
+%\normalsize
+\newpage
+
+
 \input{resumen.tex}
-
 \newpage
+
 \input{bibliografia.tex}
+\newpage
+
+\bibliographystyle{tp3}
+
 \end{document}
