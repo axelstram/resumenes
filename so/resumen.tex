@@ -252,3 +252,91 @@ Se utilizan varias colas que representan distintas clases de prioridas. Por ejem
 \section{Administración de memoria}
 
 La parte del sistema operativo que administra (parte de) la jerarquía de memoria se conoce como \textbf{administrador de memoria}. Su trabajo es administrar la memoria con eficiencia: llevar el registro de cuáles partes de la memoria están en uso, asignar memoria a los procesos cuando la necesiten y desasignarla cuando terminen.
+
+\subsection{Sin abstracción de memoria}
+
+La abstracción más simple de memoria es ninguna abstracción. Cada programa ve simplemente la memoria física. Aunque pueden haber varios procesos en memoria corriendo a la vez, pueden ocurrir errores tales como que un proceso pise la memoria de otro, o que un proceso, a la hora de hacer un JMP, salte a una posición incorrecta por haber hecho referencia a una posición absoluta.
+
+\subsection{Espacios de direcciones}
+
+Hay que resolver dos problemas para permitir que haya varias aplicaciones en memoria al mismo tiempo sin que interfieran entre sí: protección y reubicación. Una solución es inventar una nueva abstracción para la memoria: el espacio de direcciones. Un espacio de direcciones crea un tipo de memoria abstracta, es el conjunto de direcciones que puede utilizar un proceso para direccionar memoria.
+
+El uso de registros base y límite es una manera fácil de proporcionar a cada proceso su propio espacio de direcciones privado. Una desventaja de este método es la necesidad de realizar una suma y una comparación en cada referencia a memoria.
+
+\subsection{Administración de memoria libre}
+
+Hay 2 formas de llevar el registro del uso de la memoria: mapas de bits y listas libres.
+
+\begin{itemize}
+
+\item \textbf{\underline{Mapas de bits:}} en este esquema, la memoria se divide en unidades de asignación, que pueden ser unas cuantas palabras o varios kilobytes. Para cada unidad de asignación hay un bit correspondiente en el mapa de bits. El problema principal es que, cuando se quiere cargar un proceso de k unidades a la memoria, se debe buscar en el mapa una serie de k bits consecutivos con el valor 0, lo cual es una operación lenta.
+
+\item \textbf{\underline{Listas libres:}} se mantiene una lista ligada de segmentos de memoria asignados y libres, en donde un segmento contiene un proceso o es un hueco vacío entre 2 procesos.
+
+Cuando los procesos y huecos se mantienen en una lista ordenada por dirección, se pueden utilizar varios algoritmos para asignar memoria a un proceso creado.
+
+El algoritmo más simple es el \textbf{First-Fit}: se reserva el primer bloque que sea lo suficientemente grande.
+
+Otro algoritmo es el \textbf{Best-Fit}: reserva el bloque más pequeño entre todos los bloques que sean lo suficientemente grandes. Hay que recorrer toda la lista. Sorprendentemente, provoca más desperdicio de memoria que First-Fit, ya que tiende a llenar la memoria con huecos pequeños e inutilizables.
+
+Para resolver el problema de dividir las coincidencias casi exactas en un proceso y en un pequeño hueco, se puede utilizar el algoritmo \textbf{Worst-Fit}, el cual reserva el bloque más grande disponible. Tampoco es muy buena idea.
+
+Otro algoritmo de asignación es el \textbf{Quick-Fit}, el cual mantiene listas separadas para algunos de los tamaños más comunes solicitados. Tiene la misma desventaja que todos los esquemas que se ordenan por el tamaño del hueco: cuando un proceso termina o es intercambiado, buscar en sus vecinos para ver si es posible una fusión es un proceso costoso. Todos estos algoritmos sufren de \textbf{fragmentación externa}.
+
+\end{itemize}
+
+
+\subsection{Memoria Virtual}
+
+La idea básica es que cada programa tiene su propio espacio de direcciones, el cual se divide en trozos llamados \textbf{páginas}. Cada página es un rango contiguo de direcciones, las cuales se asocian a la memoria física, pero no todas tienen que estar en memoria para poder ejecutar el programa. Cuando el programa hace referencia a una parte de su espacio de direcciones que no está en la memoria física, el sistema operativo recibe una alerta para buscar la parte faltante y volver a ejecutar la instrucción que falló. En cierto sentido, la memoria virtual es una generalización de la idea de los registros base y límite.
+
+\subsection{Paginación}
+
+Las direcciones de memoria generadas por un programa se conocen como \textbf{direcciones virtuales}. En las computadoras sin memoria virtual, la dirección física se coloca directamente en el bus de memoria. Cuando se utiliza memoria virtual, las direcciones virtuales no van al bus de memoria, sino a la \textbf{MMU} (Memory Management Unit), que asocia las direcciones virtuales a las físicas.
+
+El espacio de direcciones virtuales se divide en unidades de tamaño fijo llamadas \textbf{páginas}. Las unidades correspondientes en la memoria física se llaman \textbf{marcos de página}. Las páginas y los marcos de página suelen ser del mismo tamaño, y suelen ser de 4 KB. Las transferencias entre la RAM y el disco siempre son de páginas completas. Si el programa hace referencia a una página que no está presente, la CPU hace un trap al sistema operativo. A este trap se lo llama \textbf{page fault}.
+
+Los tamaños de página son potencia de 2 ya que dentro de la MMU se utilizan parte de los bits de la dirección virtual para seleccionar una página, y los restantes bits para indexar dentro de esa página. El número de página se utiliza como índice en la \textbf{page table.}
+
+\subsection{Page Tables}
+
+En una implementación simple, el mapeo de direcciones virtuales a físicas se realiza de la siguiente manera: la dirección virtual se divide en un número de página virtual (bits de mayor orden) y en un desplazamiento (bits de menor orden).
+
+En cualquier sistema de paginación hay que abordar dos cuestiones principales:
+
+\begin{itemize}
+\item La asociación entre una dirección virtual y una física debe ser rápida.
+
+\item Si el espacio de direcciones virtuales es grande, la page table será grande.
+\end{itemize}
+
+El primer punto es una consecuencia del hecho de que la asociación virtual a física debe realizarse en cada referencia a memoria.
+
+El segundo punto se deriva del hecho de que todas las computadoras modernas utilizan direcciones virtuales de 32 o 64 bits. Con un tamaño de página de 4 KB y un espacio de direcciones de 32 bits, habrá 1 millón de páginas, y por lo tanto la page table tendrá 1 millón de entradas.
+
+La solución para acelerar el mapeo de direcciones virtuales a físicas fue equipar a las computadoras con una cache especial que guarde las asociaciones entre direcciones virtuales y físicas sin pasar por la page table. Esta cache se llama \textbf{TLB} (Translation Lookaside Buffer). La TLB funciona de la siguiente manera: cuando se presenta una dirección virtual a la MMU, ésta chequea en paralelo si el número de página virtual está presente en la TLB, es decir, chequea todas las entradas en forma simultánea. Si se encuentra una coincidencia válida y el acceso no viola los bits de protección, el page frame se toma directamente sin pasar por la tabla de páginas. En caso contrario, se realiza una búsqueda ordinaria en la tabla de páginas, se desaloja una entrada de la TLB y se la reemplaza con la entrada que se acaba de buscar.
+
+Hasta ahora supusimos que toda máquina con memoria virtual paginada tiene page tables reconocidas por el hardware, más un TLB. En este diseño, la administración y el manejo de fallas del TLB se realiza por completo mediante el hardware de la MMU. Sin embargo, esta suposición ya no es correcta, ya que en muchas máquinas modernas se hace casi toda la administración de páginas mediante software. En estas máquinas, las entradas del TLB se cargan de manera explícita mediante el sistema operativo. Cuando no se encuentra una coincidencia en el TLB, en vez de que la MMU vaya a las tablas de páginas para buscar y obtener la referencia a la página que se necesita, solo genera un fallo del TLB y pasa el problema al sistema operativo. El sistema debe buscar la página, eliminar una entrada del TLB, introducir la nueva página y reiniciar la instrucción que originó el fallo.
+
+El otro problema que había era el de espacios de direcciones virtuales muy extensos. Algunas maneras de lidiar con esto son las tablas de páginas multinivel.
+
+
+\subsection{Tablas de páginas multinivel}
+
+La idea de este método es evitar mantener todas las tablas de páginas en memoria, en especial aquellas que no se necesitan. Para lograr esto, se divide la tabla de páginas en partes más pequeñas. Una manera es usar paginación de 2 niveles, en donde la tabla de páginas también es paginada. En el caso de una máquina de 32 bits con un tamaño de página de 4 KB, las direcciones de memoria se dividen en:
+
+~\\
+
+\begin{figure}[h]
+	\begin{center}
+	\includegraphics[width=0.8\textwidth]{imagenes/32-bit-4k-paging.png}
+	\end{center}
+\end{figure}
+
+~\\
+
+Todos los procesos activos deben tener un Page Directory asignado; sin embargo, no es necesario reservar memoria para todas las tablas de páginas del proceso, sino solo para las que necesita. Con el esquema de paginación simple de 1 nivel, la Page Table de cada proceso tendría $2^{20}$ entradas, y con 4 bytes por entrada, serían 4 MB por proceso. El esquema de 2 niveles reduce la cantidad de memoria requerida haciendo que sólo se usen tablas de páginas para aquellas regiones de memoria virtual realmente utilizadas por el proceso.
+
+\subsection{Algoritmos de reemplazo de páginas}
+
+Cuando ocurre
