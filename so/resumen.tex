@@ -281,7 +281,7 @@ Otro algoritmo es el \textbf{Best-Fit}: reserva el bloque más pequeño entre to
 
 Para resolver el problema de dividir las coincidencias casi exactas en un proceso y en un pequeño hueco, se puede utilizar el algoritmo \textbf{Worst-Fit}, el cual reserva el bloque más grande disponible. Tampoco es muy buena idea.
 
-Otro algoritmo de asignación es el \textbf{Quick-Fit}, el cual mantiene listas separadas para algunos de los tamaños más comunes solicitados. Tiene la misma desventaja que todos los esquemas que se ordenan por el tamaño del hueco: cuando un proceso termina o es intercambiado, buscar en sus vecinos para ver si es posible una fusión es un proceso costoso. Todos estos algoritmos sufren de \textbf{fragmentación externa}.
+Otro algoritmo de asignación es el \textbf{Quick-Fit}, el cual mantiene listas separadas para algunos de los tamaños más comunes solicitados. Tiene la misma desventaja que todos los esquemas que se ordenan por el tamaño del hueco: cuando un proceso termina o es intercambiado, buscar en sus vecinos para ver si es posible una fusión es un proceso costoso. Todos estos algoritmos sufren de \textbf{fragmentación externa}. La fragmentación externa se da cuando existe suficiente memoria para satisfacer un pedido, pero esta no es contigua. Una solución al problema de la fragmentación externa es la compactación. Otra solución es la paginación. La paginación permite que el espacio de direcciones físicas de un proceso no sea necesariamente continuo. Con paginación no hay fragmentación externa, ya que cualquier frame puede ser reservado para un proceso. Sin embargo, puede haber \textbf{fragmentación interna}, ya que los frames son de tamaño fijo, y puede que los requerimientos de memoria no coincidan con los del tamaño del frame. Por lo tanto, el último frame reservado no será utilizado del todo. En el peor caso se desperdician 4KB - 1B = 4095B.
 
 \end{itemize}
 
@@ -339,4 +339,38 @@ Todos los procesos activos deben tener un Page Directory asignado; sin embargo, 
 
 \subsection{Algoritmos de reemplazo de páginas}
 
-Cuando ocurre
+Cuando ocurre un fallo de página, el sistema operativo tiene que elegir una página para desalojarla de memoria y hacer espacio para la página entrante. Algunos algoritmos de reemplazo de páginas son:
+
+
+\begin{itemize}
+\item \textbf{\underline{First In First Out (FIFO):}} el sistema operativo mantiene una lista de todas las páginas actualmente en memoria. En un fallo de página, se elimina la página que está en la parte frontal y la nueva página se agrega al final de la lista.
+
+\item \textbf{\underline{Reloj:}} en este caso, los marcos de página se mantienen en una lista circular, con un puntero a la página más antigua. Cuando ocurre un fallo de página, la página apuntada se inspecciona. Si el bit R es $0$ la página se desaloja, se inserta la nueva página en su lugar y el puntero se avanza una posición. Si R es $1$, se borra y el puntero avanza. Esto se repite hasta encontrar una página con R = $0$.
+
+\item \textbf{\underline{Least Recently Used (LRU):}} cuando ocurre un fallo de página, se descarta la página que no se haya utilizado durante la mayor longitud de tiempo. Aunque es realizable, no es barato.
+
+Una posible implementación de este algoritmo mediante hardware es la siguiente: para una máquina con $n$ marcos de página, se mantiene una matriz de $nxn$ bits (inicialmente todos en $0$). Cada vez que se hace referencia a la página k, el hardware establece todos los bits de la fila k en $1$ y después todos los bits de la columna k en $0$. En cualquier instante, la fila cuyo valor binario sea menor es la de uso menos reciente.
+
+\item \textbf{\underline{Not Frequently Used (NFU):}} este algoritmo requiere un contador de software asociado con cada página, que al principio es $0$. En cada interrupción de reloj, se agarra cada una de las páginas en memoria y se agrega el bit R, que es $0$ o $1$, al contador. Los contadores llevan la cuenta aproximada de la frecuencia con que se hace referencia a cada página. Cuando ocurre un page fault, se sustituye la página que tenga el menor contador.
+\end{itemize}
+
+
+\subsection{Page Fault}
+
+Cuando ocurre un page fault, se ejecutan los siguientes pasos:
+
+\begin{itemize}
+\item Se emite un page fault, que es una excepción. La atrapa el kernel.
+\item Se guardan el IP y otros registros en la pila.
+\item El kernel determina que la excepción es de tipo page fault y llama al handler de la interrupción.
+\item Se chequea que la dirección virtual que se estaba buscando sea válida y que el proceso que la pide tenga permisos para accederla. Si no es así, se mata al proceso.
+\item Se selecciona un page frame libre si lo hubiese, y sino se libera uno mediante el algoritmo de reemplazo de páginas.
+\item Si la página tenía el bit dirty prendido, hay que bajarla a disco. Es decir, el proceso del kernel que maneja E/S debe ser suspendido, generándose un cambio de contexto y permitiendo que otros ejecuten. La página se marca como busy para evitar que se use.
+\item Cuando el SO es notificado de que se terminó de bajar la página a disco, comienza otra operación de E/S, esta vez para cargar la página que hay que subir.
+\item Cuando llega la interrupción que indica que la E/S para subir la página terminó, hay que actualizar la tabla de páginas para indicar que está cargada.
+\item La instrucción que causó el page fault se recomienza, tomando el IP que había quedado en el stack y los valores anteriores de los registros.
+\item Se devuelve el control al proceso de usuario. En algún momento, el scheduler lo va a hacer correr de nuevo, y cuando reintente la instrucción la página ya va a estar en memoria.
+\end{itemize}
+
+
+\section{Deadlocks}
