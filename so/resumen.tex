@@ -476,3 +476,130 @@ La otra técnica es el mapa de bits. Un disco con $n$ bloques requiere un mapa d
 \newpage
 
 \section{Discos}
+
+Los datos son almacenados en la superficie del plato en pistas y sectores. Las pistas son circulos concéntricos, y los sectores son divisiones de las pistas. Un sector contiene una cantidad fija de bytes. Los sectores se agrupan en clusters.
+
+\includegraphics[scale=1]{imagenes/disco.png}
+
+
+\subsection{Backup}
+
+Tipos de backup:
+
+\begin{itemize}
+\item \underline{\textbf{Total:}} hago una copia de todo.
+\item \underline{\textbf{Diferencial:}} guardo los cambios desde la última total.
+\item \underline{\textbf{Incremental:}} guardo los cambios desde la última copia, sea incremental, total o diferencial.
+\end{itemize}
+
+Restaurar la información con backup:
+
+\begin{itemize}
+\item \underline{\textbf{Total:}} trivial, copio todo.
+\item \underline{\textbf{Diferencial:}} obtener copia anterior y aplicar cambios
+\item \underline{\textbf{Incremental:}} aplicar todas las incrementales hasta la última total o diferencial, y aplicar esa.
+\end{itemize}
+
+\subsection{RAID}
+
+Significa Redundant Array of Inexpensive Disks. Se suelen usar "niveles", que corresponden a maneras de organizar los discos.
+
+\subsubsection{RAID 0}
+
+Tenemos 2 discos, ponemos un bloque de datos en cada uno (stripping).
+
+Ventajas: todo el espacio de disco se usa para datos útiles. Mejora la performance ya que puedo hacer operaciones en paralelo.
+
+
+Desventajas: cero redundancia extra. Es el doble probable que, por fallo de disco, pierda datos.
+
+\includegraphics[scale=1]{imagenes/raid0}
+
+
+\subsection{RAID 1}
+
+Tenemos 2 discos. Duplicamos los datos.
+
+Ventajas: redundancia. Se me tienen que caer los 2 discos para perder los datos. Las lecturas son rápidas, porque tengo dos controladoras.
+
+
+Desventajas: Tengo que escribir en dos discos. Perdí un disco de almacenamiento util en redundancia.
+
+\includegraphics[scale=0.82]{imagenes/raid1}
+
+\subsection{RAID 2}
+\begin{itemize}
+\item Implementa Hamming (7,4): 7 discos, 4 de datos, 3 para Hamming.
+\item Leer requiere usar todas las controladoras
+\item Habría que escribir demasiados discos para actualizarlo bien.
+\item Strip a nivel de bit: en el primero se guardan los bits 1, 4, ...
+\end{itemize}
+
+\includegraphics[scale=1]{imagenes/raid2}
+
+\subsection{RAID 3}
+
+\begin{itemize}
+\item Strip a nivel de byte, usa paridad para corrección de errores.
+\item Usa menos discos
+\item Disco de paridad en todos los accesos: se gasta más rápido.
+\end{itemize}
+
+Una de las características de RAID 3 es que generalmente no puede atender múltiples pedidos simultáneamente, ya que cualquier bloque de datos va a estar repartido en todos los discos.
+
+\includegraphics[scale=0.4]{imagenes/raid3}
+
+\subsection{RAID 4}
+
+Usa un strip a nivel de bloque, y disco único de paridad.
+
+\includegraphics[scale=0.4]{imagenes/raid4}
+
+\subsection{RAID 5}
+
+\begin{itemize}
+\item Similar al RAID 4: stripping a nivel de bloque, usa paridad.
+\item Paridad distribuida mediante stripping
+\item Resiste la caída de un disco usando la redundancia.
+\item Requiere al menos 3 discos.
+\end{itemize}
+
+\includegraphics[scale=1]{imagenes/raid5}
+
+\subsection{RAID 6}
+
+\begin{itemize}
+\item RAID 5 mas otro bloque de paridad.
+\item Resiste la caída de hasta 2 discos.
+\end{itemize}
+
+\includegraphics[scale=1]{imagenes/raid6}
+
+\subsection{RAID 0+1}
+
+\begin{itemize}
+\item Es un mirror de stripes
+\item La capacidad usable es la misma que la de RAID 1, donde la mitad de la capacidad se usa para reflejar la otra mitad.
+\end{itemize}
+
+\includegraphics[scale=1.3]{imagenes/raid0+1}
+
+\subsection{RAID 1+0}
+
+\begin{itemize}
+\item Es un stripe de mirrors
+\item Requiere de mínimo 4 discos
+\item Excelente redundancia y performance
+\end{itemize}
+
+\includegraphics[scale=1.3]{imagenes/raid1+0}
+
+En RAID 1+0, los datos están reflejados dentro de cada grupo. En RAID 0+1, los datos están reflejados a través de los distintos grupos. El RAID 0+1 tiene menos tolerancia a fallos. Si 2 discos en cada grupo fallan, por ejemplo el 1 y el 3, falla todo el sistema.
+
+Es preferible RAID 1+0 antes que RAID 0+1.
+
+\newpage
+
+\section{Seguridad}
+
+
