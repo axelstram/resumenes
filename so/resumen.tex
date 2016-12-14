@@ -372,5 +372,107 @@ Cuando ocurre un page fault, se ejecutan los siguientes pasos:
 \item Se devuelve el control al proceso de usuario. En algún momento, el scheduler lo va a hacer correr de nuevo, y cuando reintente la instrucción la página ya va a estar en memoria.
 \end{itemize}
 
-
+\newpage
 \section{Deadlocks}
+
+En un sistema con multiprogramación, distintos procesos compiten por un número finito de recursos. Un proceso pide recursos; si los recursos no están disponibles, el proceso se bloquea. Puede suceder que los procesos bloqueados nunca se despierten, porque los recursos que pidieron están siendo retenidos por otros procesos bloqueados a su vez por esperar a los recursos del primer proceso.  Esta situación se denomina \textbf{deadlock}.
+
+Una clase principal de deadlocks involucra a los recursos, que pueden ser de hardware o de software. Los recursos son de dos tipos: \textbf{apropiativos} y \textbf{no apropiativos}. Un recurso apropiativo es uno que se puede quitar al proceso que lo posee sin efectos dañinos. Un ejemplo es la memoria. Un recurso no apropiativo es uno que no se puede quitar a su propietario sin hacer que el cómputo falle. Un ejemplo sería una grabadora de DVD. En general, los deadlocks involucran recursos no apropiativos.
+
+\subsection{Condiciones necesarias para un deadlock}
+
+Se deben cumplir 4 condiciones simultáneamente para que se de un deadlock:
+
+\begin{itemize}
+\item  \textbf{\underline{Exclusión Mutua:}} el recurso se asigna en un momento dado a sólo un proceso, o está disponible en caso contrario.
+\item  \textbf{\underline{Hold and Wait:}} debe existir un proceso que esté reteniendo al menos un recurso y esté esperando para conseguir recursos adicionales que están siendo retenidos por otro proceso.
+\item  \textbf{\underline{No Preemption:}} los recursos otorgados a un proceso no se le pueden quitar por la fuerza. Estos deben ser liberados de forma explícita por el proceso que los contiene.
+\item  \textbf{\underline{Circular Wait:}} debe haber una cadena circular de 2 o más procesos, cada uno de los cuales espera un recurso retenido por el siguiente miembro de la cadena.
+\end{itemize}
+
+En general, se utilizan 4 estrategias para lidiar con los deadlocks:
+
+\begin{enumerate}[1]
+\item Ignorar el problema.
+\item Detección y recuperación.
+\item Evitarlos en forma dinámica mediante la asignación cuidadosa de los recursos.
+\item Prevención, al evitar estructuralmente una de las 4 condiciones requeridas.
+\end{enumerate}
+
+\subsection{Detección y recuperación}
+
+Cuando se utiliza esta técnica, el sistema no trata de evitar los deadlocks, sino que intenta detectarlos cuando ocurren y luego realiza cierta acción para recuperarse del hecho.
+
+El caso más sencillo es cuando sólo existe un recurso de cada tipo. Para un sistema así, se puede construir un gráfico de recursos. Si contiene 1 o más ciclos, existe un deadlock. A la hora de implementarlo, existen algoritmos para detectar ciclos en grafos.
+
+Una vez detectado el deadlock, existen varias maneras de recuperarse:
+
+\begin{itemize}
+\item  \textbf{\underline{Recuperación por medio de apropiación:}} en este caso se quita temporalmente el recurso al proceso y se lo otorga a otro. Con frecuencia es difícil o imposible recuperarse de esta manera.
+\item  \textbf{\underline{Recuperación a través del retroceso:}} en este caso los procesos realizan puntos de comprobación en forma periódica. Esto significa que su estado se escribe en un archivo para poder reiniciarlo más tarde. Cuando se detecta un deadlock, un proceso que posee un recurso necesario se revierte a un punto en el tiempo antes de que haya adquirido el recurso.
+\item  \textbf{\underline{Recuperación a través de la eliminación de procesos:}} se elimina a uno de los procesos en el ciclo.
+\end{itemize}
+\newpage
+
+
+\section{Sistemas de Archivos}
+
+Los archivos son un mecanismo de abstracción. Proporcionan una manera de almacenar información en el disco y leerla después. Esto se debe hacer de tal forma que se proteja al usuario de los detalles acerca de cómo y dónde se almacena la información, y cómo funcionan los discos en realidad.
+
+Los sistemas de archivos se almacenan en discos, los cuales se pueden dividir en una o más particiones, con sistemas de archivos independientes en cada partición. El sector $0$ del disco se conoce como el \textbf{MBR} (Master Boot Record) y se utiliza para arrancar la computadora. El final de la MBR contiene la tabla de particiones, la cual proporciona las direcciones de inicio y fin de cada partición.
+
+Una posible distribución del sistema de archivos sería:
+\\
+
+
+\includegraphics[scale=0.4]{imagenes/file-system.jpg}
+\\
+
+
+El \textbf{superbloque} contiene todos los parámetros clave acerca del sistema de archivos y se lee en la memoria cuando se entra en contacto con el sistema de archivos por primera vez.
+
+\subsection{Implementación de archivos}
+
+\subsubsection{Asignación continua}
+
+El esquema de asignación continua más simple es almacenar cada archivo como una serie contigua de bloques en disco. Así, en un disco con bloques de 1 KB, a un archivo de 50 KB se le asignarían 50 bloques consecutivos. Las ventajas de este método son 2: es fácil de implementar y el rendimiento de lectura es excelente. La desventaja es que los discos se fragmentan. Este esquema, sin embargo, es útil en los CD's.
+
+\subsubsection{Asignación de lista enlazada}
+
+A diferencia de la asignación contigua, en este método se puede utilizar cada bloque del disco y no se pierde espacio debido a la fragmentación.
+
+En este caso, como los bloques no son continuos, se puede tener una tabla en memoria con punteros a otras partes de la tabla, los cuales representan la cadena de bloques del archivo. La principal desventaja de este método es que toda la tabla debe estar en memoria todo el tiempo. Esta tabla en memoria principal se conoce como \textbf{FAT} (File Allocation Table).
+
+\subsubsection{Nodos-i}
+
+Otro método para llevar un registro de qué bloques pertenecen a cada archivo es asociar a cada archivo una estructura de datos llamada \textbf{nodo-i} (nodo-índice), la cual lista los atributos y las direcciones de disco de los bloques del archivo. Una ventaja de este método con respecto a los anteriores, es que el nodo-i necesita estar en memoria sólo cuando está abierto el archivo correspondiente.
+
+\includegraphics[scale=1]{imagenes/inode.jpg} 
+
+
+\subsection{Journaling File System}
+
+La idea de estos file systems es proveer rebustez ante las fallas, manteniendo un registro de lo que va a realizar el sistema de archivos antes de hacerlo, por lo que si el sistema falla antes de poder realizar su trabajo, al momento de re-arrancar el sistema puede buscar en el registro para ver lo que estaba ocurriendo al momento de la falla y terminar el trabajo. NTFS, Ext 3 y ReiserFS son ejemplos de JFS.
+
+Para que funcione el sistema por bitácora, las operaciones registradas deben ser idempotentes, es decir, que pueden repetirse todas las veces que sea necesario sin peligro.
+
+\subsection{Virtual File Systems}
+
+Sirven para integrar múltiples sistemas de archivos en una estructura ordenada. La idea clave es abstraer la parte del sistema de archivos que es común para todos los sistemas de archivos y poner ese código en una capa separada que llame a los sistemas de archivos concretos subyacentes. Todas las llamadas al sistema relacionadas con archivos se dirigen al sistema de archivos virtual, el cual hace de interfaz para los procesos de usuario (la interfaz de POSIX). Esta es la interfaz superior.
+
+El VFS también tiene una interfaz inferior paa los sistemas de archivos concretos.
+\\
+
+
+\includegraphics[scale=1]{imagenes/vfs.png}
+
+
+\subsection{Administración del espacio en disco}
+
+Hay 2 métodos utilizados para llevar el registro de los bloques libres. El primero consiste en utilizar una lista enlazada de bloques de disco, donde cada bloque contiene tantos números de bloques de disco libres como pueda.
+
+La otra técnica es el mapa de bits. Un disco con $n$ bloques requiere un mapa de bits de $n$ bits.
+
+\newpage
+
+\section{Discos}
