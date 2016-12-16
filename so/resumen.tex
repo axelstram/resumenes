@@ -602,4 +602,177 @@ Es preferible RAID 1+0 antes que RAID 0+1.
 
 \section{Seguridad}
 
+La seguridad de la información se entiende como la preservación de las siguientes características:
 
+\begin{itemize}
+\item \textbf{\underline{Confidencialidad:}} significa que los datos privados de un usuario deben permanecer privados.
+\item \textbf{\underline{Integridad:}} usuarios no autorizados no deben poder modificar datos de otros usuarios sin su permiso.
+\item \textbf{\underline{Disponibilidad:}} significa que nadie debería poder perturbar el funcionamiento normal del sistema.
+\end{itemize}
+
+\subsection{Permisos}
+
+Existen distintos mecanismos para controlar el acceso a los recursos:
+
+\begin{itemize}
+\item \textbf{\underline{Dominios de protección:}} un sistema contiene varios recursos (objetos) que necesitan ser protegidos. Estos objetos pueden ser hardware (CPU, memoria, disco) o software (procesos, archivos, semáforos). Cada objeto tiene un nombre único y un conjunto finito de operaciones que los procesos tienen permitido llevar a cabo sobre ellos.
+
+Un dominio (asociado a un sujeto) es un par (objeto, permisos). Cada par especifica un objeto y un subconjunto de las operaciones que se pueden realizar sobre dicho objeto. Un dominio se puede corresponder con un usuario particular o con un grupo de usuarios.
+
+Se suele aplicar un principio muy común, el principio de mínimo privilegio.
+
+En el caso particular de UNIX, el dominio de un proceso se define por su UID y su GID. Dados estos 2 valores, se puede hacer una lista de todos los objetos que pueden ser accedidos, y si pueden ser accedidos para lectura, escritura o ejecución.
+
+Cuando un proceso ejecuta un archivo con el bit SETUID o SETGID prendido, adquiere un nuevo UID o GID, lo cual resulta en un cambio de dominio.
+
+Este esquema se puede implementar como una matriz de protección o de control de acceso, donde para cada dominio y para cada objeto, se pueden ver los permisos que el dominio tiene sobre el objeto. También se pueden incluir los dominios a los que un dominio en particular puede entrar.
+
+\includegraphics[scale=1]{imagenes/protection-matrix}
+
+\item \textbf{\underline{Listas de Control de Acceso (ACL):}} como la matriz de control de acceso es esparsa, no tiene sentido guardarla entera. Un enfoque es guardarlas por columna, lo cual consiste en asociar a cada objeto una lista ordenada que contiene todos los dominios que pueden acceder al objeto, y cómo.
+
+En los sistemas en los que los procesos tienen UID y GID, una entrada de la ACL tiene la forma $UID_{i}$, $GID_{i}$: $permisos_{i}$
+
+\item \textbf{\underline{Lista de capacidades:}} en este caso se guarda la matriz de control de acceso por filas, asociando a cada proceso una lista de objetos que pueden ser accedidos, junto con las operaciones permitidas (su dominio). Esta lista se denomina lista de capacidades.
+\end{itemize}
+
+\subsection{Criptografía}
+
+El propósito de la critografía es tomar un mensaje o archivo, conocido como texto simple, y convertirlo en texto cifrado de tal forma que sólo las personas autorizadas sepan cómo convertirlo nuevamente en texto simple.
+
+Los algoritmos de cifrado y descifrado suelen ser públicos, por lo que el secreto depende de los parámetros de los algoritmos, a los cuales se les denomina \textbf{claves}. Si $P$ es el archivo de texto simple, $K_{E}$ es la clave de cifrado, $C$ es el texto cifrado y $E$ es el algoritmo de cifrado, entonces $C = E(P, K_{E})$. La idea de que todos los algoritmos deben ser públicos y el secreto debe residir exclusivamente en las claves se conoce como \textbf{Principio de Kerckhoffs}.
+
+De manera similar, tenemos que $P = D(C, K_{D})$, donde $D$ es el algoritmo de descifrado y $K_{D}$ es la clave de descifrado.
+
+\subsubsection{Criptografía de clave secreta}
+
+Un ejemplo de sistema de clave secreta es la sustitución monoalfabética, en donde la clave es la cadena de 26 letras correspondientes al alfabeto completo. También se los conoce como sistemas de \textbf{clave simétrica}. Algunas ejemplos de algoritmos de clave simétrica son: AES, DES, 3DES, IDEA.
+
+\subsubsection{Criptografía de clave pública}
+
+Los sistemas de clave secreta tienen una gran desventaja: el emisor y el receptor deben tener la clave secreta compartida. Para resolver este problema se utiliza la criptografía de clave pública (o \textbf{clave asimétrica}). Este sistema tiene la propiedad de que se utilizan distintas claves para el cifrado y el descifrado, y funciona de la siguiente manera: se elige un par (clave pública, clave privada) y se publica la clave pública.
+
+Hay varias situaciones donde es deseable tener cierta función $f$ con la propiedad de que, dada $f$ y su parámetro $x$, es fácil calcular $f(x)$, pero que dado $f(x)$ es imposible calcular $x$. A dichas funciones se las conocen como \textbf{funciones de una vía} o \textbf{funciones de hash criptográficas}.
+
+Las funciones de hashing más populares son: MD5, SHA-1, SHA-256 y SHA-512.
+
+
+\subsection{Software Exploits}
+
+\subsubsection{Buffer Overflow}
+
+Consideremos el siguiente código:
+
+\includegraphics[scale=0.5]{imagenes/buffer-overflow}
+
+
+El problema con esta función es que la función \textit{gets} lée caracteres de la entrada estándar hasta encontrar un caracter de nueva línea, por lo tanto, si el usuario ingresa 256 caracteres, los 128 caracteres restantes se escribirán en el stack, pisando todo lo que había antes.
+
+\includegraphics[scale=0.6]{imagenes/buffer-overflow2}
+
+Las consecuencias de esto son que un atacante puede sobreescribir el return address de la función, y hacer que el flujo de instrucciones salte al código malicioso del atacante. Comunmente, el código del atacante es usado para lanzar una shell (mediante la syscall \textit{exec}) y de esta forma tomar control del sistema.
+
+Existen distintas técnicas que se utilizan como defensa.
+
+\subsubsection{Stack Canaries}
+
+La idea es que el compilador inserta un valor aleatorio en el stack (el canary), justo debajo de la dirección de retorno. Al momento de retornar de la función, el compilador inserta código para chequear el valor del canary. Si el valor cambió, el programa termina. Sin embargo, hay maneras de saltearse el canary y sobreescribir el valor de retorno directamente.
+
+\subsubsection{Data Execution Prevention}
+
+La idea de este método es prohibir que se ejecute código en el stack o en el heap. Para lograr esto se provee soporte desde el hardware con el bit NX (no Execute). Los ataques de inyección de código ya no funcionarán si el código provisto por el atacante no se puede ejecutar.
+
+\subsubsection{ASLR}
+
+ASLR (Address Space Layout Randomization) consiste en aleatorizar las direcciones de memoria en donde se van a correr los procesos, para desincentivar atauqes en donde haya saltos a direcciones específicas de memoria.
+
+\subsubsection{Format Strings}
+
+Consideremos el siguiente programa:
+
+\includegraphics[scale=0.7]{imagenes/format-string1}
+
+Este programa es correcto. Sin embargo, si el programador escribe:
+
+\includegraphics[scale=0.7]{imagenes/format-string2}
+
+hay un problema grave. \textit{printf} toma un número variable de argumentos, y el parámetro $s$ no es simplemente un string, es un \textit{format string}. Hay algunos indicadores de formato que sólo formatean la salida, como $\%s$ y $\%d$, hay otros como $\%n$ que no imprimen nada. En vez de eso, calcula cuántos caracteres deberían ya haberse imprimido en el lugar en el que está del string y guarda ese valor en el argumento de \textit{printf}
+
+\includegraphics[scale=0.7]{imagenes/format-string3}
+
+En este caso se modifica la variable $i$ al llamar a \textit{printf}, algo que no es tan obvio. Es decir, esta llamada a \textit{printf} modifica la memoria. Por lo tanto, tenemos una manera de escribir lo que queramos en la memoria.
+
+
+\subsubsection{Race Conditions}
+
+\includegraphics[scale=0.7]{imagenes/race-condition}
+
+Asumimos que el programa tiene SETUID root y que el atacante quiere usar sus privilegios para escribir el archivo de passwords. Lo primero a notar es que no se supone que el programa deba escribir el archivo de passwords; solamente quiere escribir el archivo "my_document". Sin embargo, eso no quiere decir que el usuario tiene permisos para escribir ese archivo. Por ejemplo, el archivo podría ser un link simbólico a otro archivo que no pertenece al usuario, por ejemplo, el archivo de passwords.
+
+Para prevenir esto, el programa hace un chequeo para asegurarse de que el usuario tiene privilegios para escribir el archivo mediante la syscall \textit{access}. La llamada chequea el archivo, devolviendo $0$ si le está permitido el acceso y $-1$ en caso contrario. 
+
+El problema con este programa es que el momento en el que se chequean los privilegios de acceso y el momento en el que se usan los privilegios no es el mismo. Asumamos que una fracción de segundo después del chequeo hecho por \textit{access}, el atacante consigue crear un link simbólico con el mismo nombre de archivo al archivo de passwords. En ese caso, \textit{open} abrirá el archivo incorrecto, y las escrituras del atacante terminarán en el archivo de passwords. Para conseguir esto, el atacante debe crear el link simbólico en el momento exacto. Este ataque es conocido como \textbf{TOCTOU} (Time of Check to Time of Use).
+
+La syscall \textit{access} simplement no es segura. Una manera de solucionar sería abrir el archivo primero, y luego chequear los permisos usando el descriptor del archivo (usando la función \textit{fstat}).
+
+
+
+\newpage
+\section{Sistemas Distribuídos}
+
+\subsection{Atomicidad}
+\subsubsection{Two-phase commit}
+
+Permite a todos los nodos de un sistema distribuído ponerse de acuerdo para hacer un commit a una transacción. El protocolo funciona de la siguiente manera: un nodo es designado como coordinador, y el resto de los nodos son designados como participantes. El protocolo asume que hay almacenamiento estable en cada nodo con un sistema de log write-ahead, que los nodos no están siempre caídos, etc.
+
+\subsubsection{Fase de petición del commit}
+
+\begin{enumerate}[1]
+\item El coordinador envía un mensaje "consulta para commit" a todos los participantes.
+\item Los participantes ejecutan la transacción hasta el punto donde serán preguntados para realizar el commit.
+\item Cada participante responde con un mensaje "acuerdo" si la transacción tuvo éxito, o "abortar" en caso contrario.
+\item El coordinador espera hasta que tenga un mensaje de cada participante.
+\end{enumerate}
+
+
+\subsubsection{Fase commit}
+\underline{\textbf{Éxito}}
+
+Si el coordinador recibe un mensaje de acuerdo de todos los participantes durante la fase de ptición de commit:
+
+\begin{enumerate}[1]
+\item El coordinador envía un mensaje commit a todos los participantes
+\item Cada participante completa la operación y libera todos los recursos mantenidos durante la transacción.
+\item Todos los participantes envían un ACK al coordinador.
+\item El coordinador completa la transacción cuando recibe todos los ACK.
+\end{enumerate}
+
+\underline{\textbf{Fracaso}}
+
+Si algún participante envió un mensaje "abortar" durante la fase de petición de commit:
+
+\begin{enumerate}[1]
+\item El coordinador envía un mensaje rollback a todos los participantes.
+\item Cada participante deshace la transacción usando el log undo y libera todos los recursos.
+\item Cada participante envía un ACK al coordinador.
+\item El coordinador completa la transacción cuando ha recibido todos los ACK.
+\end{enumerate}
+
+
+La mayor desventaja del protocolo es que es bloqueante. Si el coordinador falla permanentemente, algunos participantes nunca resolverán sus transacciones.
+
+Como las transacciones se guardan en almacenamiento estable, si uno de los nodos se cae temporalmente es posible continuar luego con la transacción cuando el nodo se recupera.
+
+
+\section{Exclusión Mutua}
+\subsubsection{Algoritmo de la panadería}
+
+- Arreglo de tickets y arreglo choosing para sacar ticket
+
+- El thread $i$ pone choosing[i] = true y saca ticket (máximo ticket anterior + 1). Luego choosing[i] = false
+
+- Para cada thread espera:
+
+\quad - Que todos los threads anteriores saquen su ticket
+
+\quad - Que todos los threads con número de ticket menor salgan de su sección crítica. Si hay un thread con el mismo nro. de ticket, desempata por número de thread. 
